@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowcamp.university.springmodulith.common.model.ChartreuseType;
 import org.snowcamp.university.springmodulith.greeting.domain.GreeterService;
-import org.snowcamp.university.springmodulith.payment.domain.PaymentHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +18,18 @@ public class OrderManager {
     private final OrderRepository repository;
 
     private final OrderIdGenerator orderIdGenerator;
-    private final PaymentHandler paymentHandler;
+    private final InitPayment initPayment;
     private final GreeterService greeter;
 
     public OrderManager(
             OrderRepository repository,
             OrderIdGenerator orderIdGenerator,
-            PaymentHandler paymentHandler,
+            InitPayment initPayment,
             GreeterService greeter
     ) {
         this.repository = repository;
         this.orderIdGenerator = orderIdGenerator;
-        this.paymentHandler = paymentHandler;
+        this.initPayment = initPayment;
         this.greeter = greeter;
     }
 
@@ -76,7 +75,7 @@ public class OrderManager {
     @Transactional
     public Order processToPayment(String id) {
         Order order = this.loadExistingOrderWithRequiredState(id, OrderState.IN_PROCESS);
-        this.paymentHandler.initPayment(order.orderId());
+        this.initPayment.initPayment(order.orderId());
 
         Order result = repository.saveOrder(
                 new Order(
