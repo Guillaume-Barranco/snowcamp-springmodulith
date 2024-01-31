@@ -3,7 +3,10 @@ package org.snowcamp.university.springmodulith.order.domain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snowcamp.university.springmodulith.common.model.ChartreuseType;
-import org.snowcamp.university.springmodulith.greeting.domain.GreeterService;
+import org.snowcamp.university.springmodulith.order.OrderCompleteEvent;
+import org.snowcamp.university.springmodulith.order.OrderPaidEvent;
+import org.snowcamp.university.springmodulith.order.OrderReadyToPayEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,19 +21,17 @@ public class OrderManager {
     private final OrderRepository repository;
 
     private final OrderIdGenerator orderIdGenerator;
-    private final InitPayment initPayment;
-    private final GreeterService greeter;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderManager(
             OrderRepository repository,
             OrderIdGenerator orderIdGenerator,
-            InitPayment initPayment,
-            GreeterService greeter
+            ApplicationEventPublisher eventPublisher
     ) {
         this.repository = repository;
         this.orderIdGenerator = orderIdGenerator;
-        this.initPayment = initPayment;
-        this.greeter = greeter;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -75,7 +76,7 @@ public class OrderManager {
     @Transactional
     public Order processToPayment(String id) {
         Order order = this.loadExistingOrderWithRequiredState(id, OrderState.IN_PROCESS);
-        this.initPayment.initPayment(order.orderId());
+        this.eventPublisher.publishEvent(new OrderReadyToPayEvent(order.orderId()));
 
         Order result = repository.saveOrder(
                 new Order(
@@ -96,7 +97,7 @@ public class OrderManager {
                         order.chartreuses(),
                         OrderState.PAYED
                 ));
-        this.greeter.greet(result.orderId());
+        this.eventPublisher.publishEvent(new OrderCompleteEvent(order.orderId()));
         LOGGER.debug("Payment complete for order {}", result);
         return result;
     }
