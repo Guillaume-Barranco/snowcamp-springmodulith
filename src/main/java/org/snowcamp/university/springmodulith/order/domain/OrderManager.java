@@ -97,7 +97,7 @@ public class OrderManager {
                         order.chartreuses(),
                         OrderState.PAYED
                 ));
-        this.eventPublisher.publishEvent(new OrderCompleteEvent(order.orderId()));
+        this.eventPublisher.publishEvent(new OrderCompleteEvent(order.orderId(), order.chartreuses()));
         LOGGER.debug("Payment complete for order {}", result);
         return result;
     }
